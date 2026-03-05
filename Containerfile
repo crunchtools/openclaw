@@ -7,7 +7,7 @@
 #
 # Run:
 #   podman run -d --name openclaw \
-#     --read-only --tmpfs /tmp:rw,noexec,nosuid \
+#     --read-only --tmpfs /tmp:rw,nosuid \
 #     -p 127.0.0.1:18789:18789 \
 #     -v /srv/openclaw.crunchtools.com/data/openclaw:/app/.openclaw:Z \
 #     -v /srv/openclaw.crunchtools.com/signal/data:/app/.local/share/signal-cli:Z \

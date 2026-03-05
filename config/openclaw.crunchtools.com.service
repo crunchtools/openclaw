@@ -10,7 +10,7 @@ ExecStartPre=/usr/bin/sleep 2
 ExecStart=/usr/bin/podman run --rm --read-only \
   --name openclaw.crunchtools.com \
   -p 127.0.0.1:18789:18789 \
-  --tmpfs /tmp:rw,noexec,nosuid \
+  --tmpfs /tmp:rw,nosuid \
   -v /srv/openclaw.crunchtools.com/data/openclaw:/app/.openclaw:Z \
   -v /srv/openclaw.crunchtools.com/signal/data:/app/.local/share/signal-cli:Z \
   -v /srv/openclaw.crunchtools.com/logs:/app/logs:Z \
