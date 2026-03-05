@@ -25,11 +25,15 @@ RUN microdnf install -y nodejs npm git tar gzip && microdnf clean all
 WORKDIR /build
 
 # Install OpenClaw at a pinned version — update this on upgrades
-# mcporter is bundled as an OpenClaw dependency, not a separate install
 RUN npm install --global --prefix /build/install openclaw@2026.3.2 && \
     cd /build/install/lib/node_modules/openclaw && \
     npm install @hono/node-server@1.19.10 --save && \
     find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} +
+
+# Install mcporter — MCP server client, required for OpenClaw's mcporter skill
+# NOT bundled as an OpenClaw dependency; must be installed separately
+ARG MCPORTER_VERSION=0.7.3
+RUN npm install --global --prefix /build/mcporter mcporter@${MCPORTER_VERSION}
 
 # Download signal-cli native binary (GraalVM, no JVM required)
 ARG SIGNAL_CLI_VERSION=0.14.0
@@ -63,7 +67,10 @@ COPY --from=builder /build/install /app
 # Copy signal-cli native binary
 COPY --from=builder /build/signal-cli /app/signal-cli
 
-ENV PATH="/app/bin:/app/signal-cli/bin:${PATH}" \
+# Copy mcporter
+COPY --from=builder /build/mcporter /app/mcporter
+
+ENV PATH="/app/bin:/app/mcporter/bin:/app/signal-cli/bin:${PATH}" \
     NODE_ENV=production \
     HOME=/app
 
