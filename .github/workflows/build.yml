@@ -41,10 +41,13 @@ jobs:
           tags: latest ${{ steps.version.outputs.tag }} ${{ steps.version.outputs.sha_short }}
           containerfiles: ./Containerfile
 
+      - name: Save image for Trivy scan
+        run: podman save -o /tmp/openclaw.tar localhost/openclaw:latest
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: localhost/openclaw:latest
+          input: /tmp/openclaw.tar
           format: "table"
           exit-code: "1"
           severity: "CRITICAL,HIGH"
