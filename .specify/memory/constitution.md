@@ -1,6 +1,6 @@
 # OpenClaw Constitution
 
-> **Version:** 1.0.0
+> **Version:** 1.1.0
 > **Ratified:** 2026-03-05
 > **Status:** Active
 > **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.1.0
@@ -90,7 +90,7 @@ Adding a server requires:
 - **Dual-push:** Quay.io + GHCR on every main branch build
 - **Weekly rebuild:** Monday 6am UTC (scheduled CI)
 - **Trivy scan:** Every build, fail on CRITICAL/HIGH
-- **Security scan:** Weekly CodeQL + container scan (Monday 9am UTC)
+- **Security scan:** Weekly Trivy container scan (Monday 9am UTC)
 
 ### OCI Labels
 
@@ -102,22 +102,25 @@ Adding a server requires:
 
 | Constraint | Setting |
 |------------|---------|
-| Rootless | Yes (UID 1001) |
+| Rootless (non-root) | Yes (UID 65532, Hummingbird default) |
 | Read-only root filesystem | `--read-only` |
 | SELinux | Enforcing (`:Z` volume mounts) |
-| Host network | No |
-| Tmpfs | `/tmp:rw,noexec,nosuid` |
+| Host network | No (bridge, port mapped to 127.0.0.1) |
+| Gateway bind | `lan` inside container (host restricts via `-p 127.0.0.1:18789:18789`) |
+| Tmpfs | `/tmp:rw,nosuid` (no noexec — signal-cli extracts native libs to /tmp) |
 | Capabilities | Default (no `--privileged`, no `SYS_ADMIN`) |
 
-### Signal Sidecar
+### Signal Integration
+
+signal-cli (GraalVM native binary, v0.14.0) is bundled directly in the container image. OpenClaw auto-spawns it as a JSON-RPC + SSE daemon on container start. No sidecar container needed.
 
 | Attribute | Value |
 |-----------|-------|
-| Image | `docker.io/bbernhard/signal-cli-rest-api:latest` |
-| Port | `127.0.0.1:8093:8080` |
-| Mode | `json-rpc` (production), `native` (registration) |
-| Data volume | `/srv/openclaw.crunchtools.com/signal/data` |
-| Systemd unit | `signal-api.crunchtools.com.service` |
+| Binary | `signal-cli` (GraalVM native, no JVM) |
+| Version | 0.14.0 (pinned in Containerfile `ARG`) |
+| Transport | JSON-RPC + SSE (OpenClaw-managed, internal port 8080) |
+| Data volume | `/srv/openclaw.crunchtools.com/signal/data` → `/app/.local/share/signal-cli:Z` |
+| Account | Registered via `signal-cli` inside container |
 
 ---
 
@@ -181,7 +184,7 @@ Repeated failures trigger escalating cooldowns: 1min → 5min → 15min → halt
 |------|-------|----------|-----------|----------|
 | cheap | Gemini 2.5 Flash-Lite | $0.10 | $0.40 | Heartbeats, simple lookups |
 | fast | Gemini 2.5 Flash | $0.30 | $2.50 | Routine tasks |
-| smart | Gemini 2.5 Pro | $1.25 | $10.00 | Complex reasoning |
+| smart | Gemini 3 Pro Preview | TBD | TBD | Complex reasoning (current primary) |
 
 ### Estimated Monthly Cost
 
@@ -220,9 +223,10 @@ Token budget circuit breaker ($2.00/conversation) prevents runaway costs.
 
 | Check | Type | Priority |
 |-------|------|----------|
-| TCP port 18789 | `net.tcp.service[tcp,,18789]` | HIGH |
-| Audit log growth | Log file size check | AVERAGE |
-| Container running | service-checker.py integration | DISASTER |
+| TCP port 18789 | `net.tcp.service[tcp,127.0.0.1,18789]` | HIGH |
+| Container status | Docker discovery (40 items: CPU, memory, network, state, health) | varies |
+| Container health | `docker.container_info.state.health` | HIGH |
+| Container exit code | `docker.container_info.state.exitcode` trigger | AVERAGE |
 
 ### Incident Response
 
@@ -237,15 +241,15 @@ Token budget circuit breaker ($2.00/conversation) prevents runaway costs.
 
 | # | Gate | Status |
 |---|------|--------|
-| 1 | Container builds from Containerfile without errors | Pending |
-| 2 | Trivy scan passes (no critical/high CVEs) | Pending |
-| 3 | MCP server allowlist: all servers scored >= B/15 via find-mcp-server | Pending |
+| 1 | Container builds from Containerfile without errors | Done |
+| 2 | Trivy scan passes (no critical/high CVEs) | Done |
+| 3 | MCP server allowlist: all servers scored >= B/15 via find-mcp-server | Done |
 | 4 | Circuit breakers configured and tested (trip each one intentionally) | Pending |
-| 5 | Credential audit: no hardcoded secrets in config or image | Pending |
-| 6 | Monitoring: Zabbix items created, kill switches tested | Pending |
+| 5 | Credential audit: no hardcoded secrets in config or image | Done |
+| 6 | Monitoring: Zabbix items created, kill switches tested | Done |
 | 7 | Per-repo constitution written and validated | Done |
-| 8 | Firewall: nftables updated only if public access is needed (default: no) | Pending |
-| 9 | Systemd unit: enabled, tested start/stop/restart | Pending |
+| 8 | Firewall: nftables updated only if public access is needed (default: no) | Done (no public access) |
+| 9 | Systemd unit: enabled, tested start/stop/restart | Done |
 
 ---
 
@@ -261,7 +265,19 @@ Token budget circuit breaker ($2.00/conversation) prevents runaway costs.
 | Port | 18789 (127.0.0.1 only) |
 | Data volume | `/srv/openclaw.crunchtools.com/` |
 | Public access | No (outbound to Signal only) |
-| Container count | 2 (OpenClaw + signal-cli-rest-api sidecar) |
+| Container count | 1 (OpenClaw with bundled signal-cli) |
+
+---
+
+## Versioning
+
+This constitution follows [Semantic Versioning 2.0.0](https://semver.org/). Changes to security layers or quality gates require a MINOR version bump. Corrections and clarifications are PATCH versions.
+
+---
+
+## License
+
+OpenClaw is licensed under MIT. The crunchtools constitution and autonomous agent profile are licensed under AGPL-3.0-or-later.
 
 ---
 
