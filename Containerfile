@@ -40,14 +40,14 @@ LABEL name="openclaw-crunchtools" \
       org.opencontainers.image.description="OpenClaw autonomous agent — crunchtools deployment" \
       org.opencontainers.image.licenses="MIT"
 
-# Create non-root user
-RUN echo 'openclaw:x:1001:1001:OpenClaw Agent:/home/openclaw:/bin/sh' >> /etc/passwd && \
-    echo 'openclaw:x:1001:' >> /etc/group && \
-    mkdir -p /home/openclaw/.openclaw /home/openclaw/logs && \
-    chown -R 1001:1001 /home/openclaw
+# Create app directories — Hummingbird has read-only /etc/passwd,
+# so skip user creation and run as numeric UID 1001 directly.
+# Volume mounts at runtime provide writable .openclaw and logs dirs.
+RUN mkdir -p /home/openclaw/.openclaw /home/openclaw/logs /home/openclaw/.local && \
+    chmod -R 777 /home/openclaw
 
 # Copy installed OpenClaw from builder
-COPY --from=builder --chown=1001:1001 /build/install /home/openclaw/.local
+COPY /build/install /home/openclaw/.local
 
 ENV PATH="/home/openclaw/.local/bin:${PATH}" \
     NODE_ENV=production \
