@@ -35,8 +35,9 @@ RUN npm install --global --prefix /build/install openclaw@2026.3.2 && \
 ARG SIGNAL_CLI_VERSION=0.14.0
 RUN curl -sL "https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz" \
     -o /tmp/signal-cli.tar.gz && \
-    mkdir -p /build/signal-cli && \
-    tar xf /tmp/signal-cli.tar.gz -C /build/signal-cli --strip-components=1 && \
+    mkdir -p /build/signal-cli/bin && \
+    tar xf /tmp/signal-cli.tar.gz -C /build/signal-cli/bin && \
+    chmod +x /build/signal-cli/bin/signal-cli && \
     rm /tmp/signal-cli.tar.gz
 
 # Stage 2: Runtime image — minimal, no build tools
