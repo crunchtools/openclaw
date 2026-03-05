@@ -25,7 +25,8 @@ WORKDIR /build
 
 # Install OpenClaw at a pinned version — update this on upgrades
 # mcporter is bundled as an OpenClaw dependency, not a separate install
-RUN npm install --global --prefix /build/install openclaw@2026.3.2
+RUN npm install --global --prefix /build/install openclaw@2026.3.2 && \
+    npm install --global --prefix /build/install @hono/node-server@1.19.10
 
 # Stage 2: Runtime image — minimal, no build tools
 # Hummingbird images are immutable (/etc/passwd, /home are read-only)
