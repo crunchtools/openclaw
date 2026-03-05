@@ -20,7 +20,7 @@
 # OpenClaw's npm dependencies require for installation
 FROM registry.access.redhat.com/ubi10/ubi-minimal AS builder
 
-RUN microdnf install -y nodejs npm git && microdnf clean all
+RUN microdnf install -y nodejs npm git tar gzip && microdnf clean all
 
 WORKDIR /build
 
