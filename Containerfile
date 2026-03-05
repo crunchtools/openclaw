@@ -14,8 +14,12 @@
 #     --env-file /srv/openclaw.crunchtools.com/config/env \
 #     quay.io/crunchtools/openclaw
 
-# Stage 1: Install OpenClaw and dependencies with build tools
-FROM quay.io/hummingbird/nodejs:22-builder AS builder
+# Stage 1: Install OpenClaw and dependencies
+# Use UBI 10 Minimal as builder — Hummingbird builder lacks git which
+# OpenClaw's npm dependencies require for installation
+FROM registry.access.redhat.com/ubi10/ubi-minimal AS builder
+
+RUN microdnf install -y nodejs npm git && microdnf clean all
 
 WORKDIR /build
 
