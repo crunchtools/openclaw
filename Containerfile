@@ -10,6 +10,7 @@
 #     --read-only --tmpfs /tmp:rw,noexec,nosuid \
 #     -p 127.0.0.1:18789:18789 \
 #     -v /srv/openclaw.crunchtools.com/data/openclaw:/app/.openclaw:Z \
+#     -v /srv/openclaw.crunchtools.com/signal/data:/app/.local/share/signal-cli:Z \
 #     -v /srv/openclaw.crunchtools.com/logs:/app/logs:Z \
 #     --env-file /srv/openclaw.crunchtools.com/config/env \
 #     quay.io/crunchtools/openclaw
@@ -29,6 +30,14 @@ RUN npm install --global --prefix /build/install openclaw@2026.3.2 && \
     cd /build/install/lib/node_modules/openclaw && \
     npm install @hono/node-server@1.19.10 --save && \
     find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} +
+
+# Download signal-cli native binary (GraalVM, no JVM required)
+ARG SIGNAL_CLI_VERSION=0.14.0
+RUN curl -sL "https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz" \
+    -o /tmp/signal-cli.tar.gz && \
+    mkdir -p /build/signal-cli && \
+    tar xf /tmp/signal-cli.tar.gz -C /build/signal-cli --strip-components=1 && \
+    rm /tmp/signal-cli.tar.gz
 
 # Stage 2: Runtime image — minimal, no build tools
 # Hummingbird images are immutable (/etc/passwd, /home are read-only)
@@ -50,7 +59,10 @@ WORKDIR /app
 # Copy installed OpenClaw from builder into /app
 COPY --from=builder /build/install /app
 
-ENV PATH="/app/bin:${PATH}" \
+# Copy signal-cli native binary
+COPY --from=builder /build/signal-cli /app/signal-cli
+
+ENV PATH="/app/bin:/app/signal-cli/bin:${PATH}" \
     NODE_ENV=production \
     HOME=/app
 
