@@ -73,4 +73,8 @@ EXPOSE 18789
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
     CMD openclaw health --json || exit 1
 
-ENTRYPOINT ["openclaw", "gateway", "run", "--bind", "loopback"]
+# Bind 0.0.0.0 inside container — host-side restriction is handled by
+# podman's -p 127.0.0.1:18789:18789 (loopback-only on the host).
+# Using --bind loopback here would bind to the container's own 127.0.0.1,
+# which is unreachable through bridge networking's DNAT port mapping.
+ENTRYPOINT ["openclaw", "gateway", "run", "--bind", "lan"]
