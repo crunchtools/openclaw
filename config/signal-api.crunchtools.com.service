@@ -1,0 +1,20 @@
+[Unit]
+Description=Podman container - signal-api.crunchtools.com (signal-cli REST API sidecar)
+Documentation=https://github.com/bbernhard/signal-cli-rest-api
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/sleep 1
+ExecStart=/usr/bin/podman run --rm \
+  --name signal-api.crunchtools.com \
+  -p 127.0.0.1:8093:8080 \
+  -v /srv/openclaw.crunchtools.com/signal/data:/home/.local/share/signal-cli:Z \
+  -e MODE=json-rpc \
+  docker.io/bbernhard/signal-cli-rest-api:latest
+ExecStop=/usr/bin/podman stop -t 5 signal-api.crunchtools.com
+ExecStopPost=/usr/bin/podman rm -f signal-api.crunchtools.com
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

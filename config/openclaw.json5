@@ -1,0 +1,78 @@
+// OpenClaw configuration for lotor.dc3.crunchtools.com
+// Constitution: crunchtools Autonomous Agent profile v1.1.0
+// Mode: unattended-gated (all writes require human approval)
+//
+// SECURITY: No secrets in this file. Credentials via env vars only.
+// See /srv/openclaw.crunchtools.com/config/env for API keys.
+{
+  gateway: {
+    port: 18789,
+    // Loopback only — no public exposure
+    bind: "loopback"
+  },
+
+  agents: {
+    list: [
+      {
+        agentId: "main",
+        workspace: "/home/openclaw/.openclaw/workspace",
+
+        // Gemini model routing (all tiers, single provider)
+        models: {
+          cheap: "gemini-2.5-flash-lite",
+          fast: "gemini-2.5-flash",
+          smart: "gemini-2.5-pro"
+        },
+
+        // Circuit breakers — conservative for unattended mode
+        limits: {
+          maxToolCallsPerConversation: 25,
+          maxTokenBudgetPerConversation: 2.00,
+          maxRepeatedSameToolInvocations: 3,
+          maxConversationDepth: 50
+        },
+
+        // Rate limiting
+        rateLimits: {
+          perTool: { maxPerHour: 10 },
+          perServer: { maxPerMinute: 50 },
+          global: { maxPerHour: 200 }
+        }
+      }
+    ]
+  },
+
+  channels: {
+    signal: {
+      enabled: true,
+      // account: "+1XXXXXXXXXX",  // Set during deployment
+      httpUrl: "http://127.0.0.1:8093",
+      apiMode: "rest",
+      dmPolicy: "pairing",
+      // allowFrom: ["+1XXXXXXXXXX"]  // Scott's number, set during deployment
+    }
+  },
+
+  // Human-in-the-loop: all write operations gated
+  mode: "unattended-gated",
+
+  // Dead man's switch — 4hr window
+  deadManSwitch: {
+    enabled: true,
+    windowHours: 4,
+    notifyChannel: "signal"
+  },
+
+  // Audit logging
+  logging: {
+    audit: {
+      enabled: true,
+      path: "/home/openclaw/logs/audit/",
+      format: "json",
+      retentionDays: 90,
+      redactCredentials: true,
+      rotation: "daily",
+      compressAfterDays: 7
+    }
+  }
+}

@@ -1,0 +1,25 @@
+[Unit]
+Description=Podman container - openclaw.crunchtools.com
+Documentation=https://github.com/crunchtools/openclaw
+After=network-online.target signal-api.crunchtools.com.service
+Wants=signal-api.crunchtools.com.service
+
+[Service]
+Type=simple
+EnvironmentFile=/srv/openclaw.crunchtools.com/config/env
+ExecStartPre=/usr/bin/sleep 2
+ExecStart=/usr/bin/podman run --rm --read-only \
+  --name openclaw.crunchtools.com \
+  -p 127.0.0.1:18789:18789 \
+  --tmpfs /tmp:rw,noexec,nosuid \
+  -v /srv/openclaw.crunchtools.com/data/openclaw:/home/openclaw/.openclaw:Z \
+  -v /srv/openclaw.crunchtools.com/logs:/home/openclaw/logs:Z \
+  -e GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY} \
+  quay.io/crunchtools/openclaw:latest
+ExecStop=/usr/bin/podman stop -t 10 openclaw.crunchtools.com
+ExecStopPost=/usr/bin/podman rm -f openclaw.crunchtools.com
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
