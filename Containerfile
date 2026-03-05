@@ -9,13 +9,13 @@
 #   podman run -d --name openclaw \
 #     --read-only --tmpfs /tmp:rw,noexec,nosuid \
 #     -p 127.0.0.1:18789:18789 \
-#     -v /srv/openclaw.crunchtools.com/data/openclaw:/home/openclaw/.openclaw:Z \
-#     -v /srv/openclaw.crunchtools.com/logs:/home/openclaw/logs:Z \
+#     -v /srv/openclaw.crunchtools.com/data/openclaw:/app/.openclaw:Z \
+#     -v /srv/openclaw.crunchtools.com/logs:/app/logs:Z \
 #     --env-file /srv/openclaw.crunchtools.com/config/env \
 #     quay.io/crunchtools/openclaw
 
 # Stage 1: Install OpenClaw and dependencies
-# Use UBI 10 Minimal as builder — Hummingbird builder lacks git which
+# Use UBI 10 Minimal as builder — Hummingbird lacks git which
 # OpenClaw's npm dependencies require for installation
 FROM registry.access.redhat.com/ubi10/ubi-minimal AS builder
 
@@ -28,6 +28,8 @@ WORKDIR /build
 RUN npm install --global --prefix /build/install openclaw@2026.3.2
 
 # Stage 2: Runtime image — minimal, no build tools
+# Hummingbird images are immutable (/etc/passwd, /home are read-only)
+# so we use /app as the working directory (same pattern as mcp-github)
 FROM quay.io/hummingbird/nodejs:22
 
 LABEL name="openclaw-crunchtools" \
@@ -40,21 +42,14 @@ LABEL name="openclaw-crunchtools" \
       org.opencontainers.image.description="OpenClaw autonomous agent — crunchtools deployment" \
       org.opencontainers.image.licenses="MIT"
 
-# Create app directories — Hummingbird has read-only /etc/passwd,
-# so skip user creation and run as numeric UID 1001 directly.
-# Volume mounts at runtime provide writable .openclaw and logs dirs.
-RUN mkdir -p /home/openclaw/.openclaw /home/openclaw/logs /home/openclaw/.local && \
-    chmod -R 777 /home/openclaw
+WORKDIR /app
 
-# Copy installed OpenClaw from builder
-COPY /build/install /home/openclaw/.local
+# Copy installed OpenClaw from builder into /app
+COPY --from=builder /build/install /app
 
-ENV PATH="/home/openclaw/.local/bin:${PATH}" \
+ENV PATH="/app/bin:${PATH}" \
     NODE_ENV=production \
-    HOME=/home/openclaw
-
-USER 1001
-WORKDIR /home/openclaw
+    HOME=/app
 
 EXPOSE 18789
 
