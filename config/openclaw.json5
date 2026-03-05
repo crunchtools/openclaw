@@ -15,7 +15,7 @@
     list: [
       {
         agentId: "main",
-        workspace: "/home/openclaw/.openclaw/workspace",
+        workspace: "/app/.openclaw/workspace",
 
         // Gemini model routing (all tiers, single provider)
         models: {
@@ -67,7 +67,7 @@
   logging: {
     audit: {
       enabled: true,
-      path: "/home/openclaw/logs/audit/",
+      path: "/app/logs/audit/",
       format: "json",
       retentionDays: 90,
       redactCredentials: true,

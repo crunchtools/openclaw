@@ -7,7 +7,7 @@
 set -euo pipefail
 
 SERVICE_DIR="/srv/openclaw.crunchtools.com"
-OPENCLAW_UID=1001
+OPENCLAW_UID=65532
 
 echo "Creating directory structure at ${SERVICE_DIR}..."
 
