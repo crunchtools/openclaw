@@ -52,23 +52,29 @@ jobs:
           exit-code: "1"
           severity: "CRITICAL,HIGH"
 
-      - name: Push to Quay.io
+      - name: Log in to Quay.io
         if: github.event_name != 'pull_request'
-        uses: redhat-actions/push-to-registry@v2
+        uses: docker/login-action@v3
         with:
-          image: ${{ steps.build.outputs.image }}
-          tags: ${{ steps.build.outputs.tags }}
-          registry: quay.io/crunchtools
+          registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+
+      - name: Push to Quay.io
+        if: github.event_name != 'pull_request'
+        run: |
+          podman tag localhost/openclaw:latest ${{ env.QUAY_IMAGE }}:latest
+          podman tag localhost/openclaw:latest ${{ env.QUAY_IMAGE }}:${{ steps.version.outputs.tag }}
+          podman push ${{ env.QUAY_IMAGE }}:latest
+          podman push ${{ env.QUAY_IMAGE }}:${{ steps.version.outputs.tag }}
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
 
       - name: Push to GHCR
         if: github.event_name != 'pull_request'
