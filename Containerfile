@@ -28,6 +28,7 @@ WORKDIR /build
 RUN npm install --global --prefix /build/install openclaw@2026.3.2 && \
     cd /build/install/lib/node_modules/openclaw && \
     npm install @hono/node-server@1.19.10 --save && \
+    npm update tar && \
     find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} +
 
 # Install mcporter — MCP server client, required for OpenClaw's mcporter skill
