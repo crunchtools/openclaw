@@ -25,10 +25,13 @@ RUN microdnf install -y nodejs npm git tar gzip && microdnf clean all
 WORKDIR /build
 
 # Install OpenClaw at a pinned version — update this on upgrades
-RUN npm install --global --prefix /build/install openclaw@2026.3.12 && \
+RUN npm install --global --prefix /build/install openclaw@2026.3.13 && \
     cd /build/install/lib/node_modules/openclaw && \
     npm install @hono/node-server@1.19.10 --save && \
     npm install tar@7.5.11 && \
+    npm install fast-xml-parser@5.5.6 && \
+    npm install glob@10.5.0 && \
+    npm install minimatch@9.0.7 && \
     find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} +
 
 # Install mcporter — MCP server client, required for OpenClaw's mcporter skill
