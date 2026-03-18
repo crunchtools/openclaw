@@ -1,0 +1,25 @@
+# Transitive npm dependencies in upstream openclaw package.
+# These cannot be patched by overriding top-level installs — npm nests
+# them inside other packages' node_modules. Tracked upstream.
+# Last reviewed: 2026-03-18
+
+# fast-xml-parser (transitive dep, nested in openclaw's dependency tree)
+CVE-2026-33036
+
+# glob (transitive dep)
+CVE-2025-64756
+
+# minimatch (transitive deps, multiple CVEs)
+CVE-2026-26996
+CVE-2026-27903
+CVE-2026-27904
+
+# Other transitive deps in openclaw's npm tree
+CVE-2026-23745
+CVE-2026-23950
+CVE-2026-24842
+CVE-2026-25679
+CVE-2026-26960
+CVE-2026-27137
+CVE-2026-29786
+CVE-2026-31802
