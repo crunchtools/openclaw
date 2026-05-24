@@ -25,13 +25,15 @@ RUN microdnf install -y nodejs npm git tar gzip && microdnf clean all
 WORKDIR /build
 
 # Install OpenClaw at a pinned version — update this on upgrades
-RUN npm install --global --prefix /build/install openclaw@2026.3.13 && \
+# --legacy-peer-deps on the in-package overrides: re-resolving OpenClaw's dev
+# tree otherwise fails on an upstream peer conflict (oxlint vs oxlint-tsgolint).
+RUN npm install --global --prefix /build/install openclaw@2026.5.22 && \
     cd /build/install/lib/node_modules/openclaw && \
-    npm install @hono/node-server@1.19.10 --save && \
-    npm install tar@7.5.11 && \
-    npm install fast-xml-parser@5.5.6 && \
-    npm install glob@10.5.0 && \
-    npm install minimatch@9.0.7 && \
+    npm install @hono/node-server@1.19.10 --save --legacy-peer-deps && \
+    npm install tar@7.5.11 --legacy-peer-deps && \
+    npm install fast-xml-parser@5.5.6 --legacy-peer-deps && \
+    npm install glob@10.5.0 --legacy-peer-deps && \
+    npm install minimatch@9.0.7 --legacy-peer-deps && \
     find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} +
 
 # Install mcporter — MCP server client, required for OpenClaw's mcporter skill
