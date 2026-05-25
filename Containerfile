@@ -76,6 +76,19 @@ COPY --from=builder /build/signal-cli /app/signal-cli
 # Copy mcporter
 COPY --from=builder /build/mcporter /app/mcporter
 
+# Remove npm/npx from the runtime — OpenClaw needs only the `node` runtime to
+# run; npm is a build-time package manager. Takeda launches MCP servers over
+# HTTP (no npx/stdio), and the image is read-only with deps baked in, so npm is
+# never invoked at runtime. Dropping it eliminates the base image's bundled-npm
+# CVEs (e.g. picomatch ReDoS) and shrinks the attack surface.
+# Briefly switch to root to delete the root-owned base-image files, then
+# restore the non-root runtime user (65532).
+USER root
+RUN rm -rf /usr/lib/node_modules_22/npm \
+           /usr/bin/npm /usr/bin/npx \
+           /usr/sbin/npm /usr/sbin/npx
+USER 65532
+
 ENV PATH="/app/bin:/app/mcporter/bin:/app/signal-cli/bin:${PATH}" \
     NODE_ENV=production \
     HOME=/app
