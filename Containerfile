@@ -41,6 +41,21 @@ RUN npm install --global --prefix /build/install openclaw@2026.5.22 && \
 ARG MCPORTER_VERSION=0.7.3
 RUN npm install --global --prefix /build/mcporter mcporter@${MCPORTER_VERSION}
 
+# Install the clawphone Twilio SMS plugin as a BUNDLED OpenClaw extension
+# (pinned). We bundle it into dist/extensions rather than `openclaw plugins
+# install` at runtime because the runtime image is read-only + npm-stripped and
+# ~/.openclaw is a bind-mounted volume — a runtime install neither persists nor
+# survives a separately-built image (its registry is build-fingerprinted).
+# Bundling also means OpenClaw's install-time "dangerous code" scanner does not
+# apply: clawphone uses child_process.spawn to bridge inbound SMS to
+# `openclaw agent` (reviewed safe — args array, no shell, hardcoded args).
+# Re-vet on every version bump. Ships DISABLED; enable + configure in config.
+ARG CLAWPHONE_VERSION=1.2.0
+RUN npm install --prefix /build/cphone @ranacseruet/clawphone@${CLAWPHONE_VERSION} --legacy-peer-deps && \
+    mkdir -p /build/cphone-ext && \
+    cp -a /build/cphone/node_modules/@ranacseruet/clawphone/. /build/cphone-ext/ && \
+    cp -a /build/cphone/node_modules /build/cphone-ext/node_modules
+
 # Download signal-cli native binary (GraalVM, no JVM required)
 ARG SIGNAL_CLI_VERSION=0.14.0
 RUN curl -sL "https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz" \
@@ -70,6 +85,11 @@ WORKDIR /app
 # Copy installed OpenClaw from builder into /app
 COPY --from=builder /build/install /app
 
+# Bundle the clawphone Twilio SMS extension into OpenClaw's stock extensions
+# directory. Ships DISABLED — enable + configure (Twilio creds, cloudflared
+# tunnel URL, allowlist) via openclaw.json when the A2P campaign is live.
+COPY --from=builder /build/cphone-ext /app/lib/node_modules/openclaw/dist/extensions/clawphone
+
 # Copy signal-cli native binary
 COPY --from=builder /build/signal-cli /app/signal-cli
 
@@ -81,6 +101,14 @@ COPY --from=builder /build/mcporter /app/mcporter
 # HTTP (no npx/stdio), and the image is read-only with deps baked in, so npm is
 # never invoked at runtime. Dropping it eliminates the base image's bundled-npm
 # CVEs (e.g. picomatch ReDoS) and shrinks the attack surface.
+#
+# Why strip rather than pick an npm-less base: npm ships inside the Node.js RPM
+# in EVERY Hummingbird nodejs variant — confirmed via the catalog SBOM, the
+# distroless `default` runtime still lists @npmcli/* as runtime packages. There
+# is no npm-less Node runtime image to switch to, and the distroless runtime has
+# no dnf to remove it cleanly, so stripping the npm dir + symlinks post-COPY is
+# the correct (and only) way to get an npm-free Node runtime.
+#
 # Briefly switch to root to delete the root-owned base-image files, then
 # restore the non-root runtime user (65532).
 USER root
