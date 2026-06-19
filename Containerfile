@@ -50,8 +50,8 @@ RUN npm install --global --prefix /build/mcporter mcporter@${MCPORTER_VERSION}
 ARG MATRIX_VERSION=2026.6.8
 RUN npm install --prefix /build/matrix @openclaw/matrix@${MATRIX_VERSION} --legacy-peer-deps && \
     mkdir -p /build/matrix-ext && \
-    cp -a /build/matrix/node_modules/@openclaw/matrix/. /build/matrix-ext/ && \
-    cp -a /build/matrix/node_modules /build/matrix-ext/node_modules
+    cp -aL /build/matrix/node_modules/@openclaw/matrix/. /build/matrix-ext/ && \
+    cp -aL /build/matrix/node_modules /build/matrix-ext/node_modules
 
 # Download signal-cli native binary (GraalVM, no JVM required)
 ARG SIGNAL_CLI_VERSION=0.14.0
