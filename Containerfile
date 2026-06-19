@@ -34,6 +34,7 @@ RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
     npm install fast-xml-parser@5.5.6 --legacy-peer-deps && \
     npm install glob@10.5.0 --legacy-peer-deps && \
     npm install minimatch@9.0.7 --legacy-peer-deps && \
+    npm install undici@8.5.0 --legacy-peer-deps && \
     find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} +
 
 # Install mcporter — MCP server client, required for OpenClaw's mcporter skill
@@ -110,7 +111,8 @@ COPY --from=builder /build/mcporter /app/mcporter
 USER root
 RUN rm -rf /usr/lib/node_modules_22/npm \
            /usr/bin/npm /usr/bin/npx \
-           /usr/sbin/npm /usr/sbin/npx
+           /usr/sbin/npm /usr/sbin/npx && \
+    find /app -type f \( -name "tsgolint" -o -name "tsgo" \) -path "*/linux-x64/*" -delete
 USER 65532
 
 ENV PATH="/app/bin:/app/mcporter/bin:/app/signal-cli/bin:${PATH}" \
