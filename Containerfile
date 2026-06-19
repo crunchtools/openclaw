@@ -27,7 +27,7 @@ WORKDIR /build
 # Install OpenClaw at a pinned version — update this on upgrades
 # --legacy-peer-deps on the in-package overrides: re-resolving OpenClaw's dev
 # tree otherwise fails on an upstream peer conflict (oxlint vs oxlint-tsgolint).
-RUN npm install --global --prefix /build/install openclaw@2026.5.22 && \
+RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
     cd /build/install/lib/node_modules/openclaw && \
     npm install @hono/node-server@1.19.10 --save --legacy-peer-deps && \
     npm install tar@7.5.11 --legacy-peer-deps && \
@@ -41,20 +41,16 @@ RUN npm install --global --prefix /build/install openclaw@2026.5.22 && \
 ARG MCPORTER_VERSION=0.7.3
 RUN npm install --global --prefix /build/mcporter mcporter@${MCPORTER_VERSION}
 
-# Install the clawphone Twilio SMS plugin as a BUNDLED OpenClaw extension
-# (pinned). We bundle it into dist/extensions rather than `openclaw plugins
-# install` at runtime because the runtime image is read-only + npm-stripped and
-# ~/.openclaw is a bind-mounted volume — a runtime install neither persists nor
-# survives a separately-built image (its registry is build-fingerprinted).
-# Bundling also means OpenClaw's install-time "dangerous code" scanner does not
-# apply: clawphone uses child_process.spawn to bridge inbound SMS to
-# `openclaw agent` (reviewed safe — args array, no shell, hardcoded args).
-# Re-vet on every version bump. Ships DISABLED; enable + configure in config.
-ARG CLAWPHONE_VERSION=1.2.0
-RUN npm install --prefix /build/cphone @ranacseruet/clawphone@${CLAWPHONE_VERSION} --legacy-peer-deps && \
-    mkdir -p /build/cphone-ext && \
-    cp -a /build/cphone/node_modules/@ranacseruet/clawphone/. /build/cphone-ext/ && \
-    cp -a /build/cphone/node_modules /build/cphone-ext/node_modules
+# Install the Matrix channel plugin as a BUNDLED OpenClaw extension (pinned).
+# Same bundling rationale as clawphone: read-only + npm-stripped runtime image.
+# Matrix uses the official matrix-js-sdk for DMs, rooms, threads, media,
+# reactions, and E2EE. Ships DISABLED; enable + configure in openclaw.json.
+# Re-vet on every version bump.
+ARG MATRIX_VERSION=2026.6.8
+RUN npm install --prefix /build/matrix @openclaw/matrix@${MATRIX_VERSION} --legacy-peer-deps && \
+    mkdir -p /build/matrix-ext && \
+    cp -a /build/matrix/node_modules/@openclaw/matrix/. /build/matrix-ext/ && \
+    cp -a /build/matrix/node_modules /build/matrix-ext/node_modules
 
 # Download signal-cli native binary (GraalVM, no JVM required)
 ARG SIGNAL_CLI_VERSION=0.14.0
@@ -85,10 +81,10 @@ WORKDIR /app
 # Copy installed OpenClaw from builder into /app
 COPY --from=builder /build/install /app
 
-# Bundle the clawphone Twilio SMS extension into OpenClaw's stock extensions
-# directory. Ships DISABLED — enable + configure (Twilio creds, cloudflared
-# tunnel URL, allowlist) via openclaw.json when the A2P campaign is live.
-COPY --from=builder /build/cphone-ext /app/lib/node_modules/openclaw/dist/extensions/clawphone
+# Bundle the Matrix channel plugin into the stock extensions directory.
+# Ships DISABLED — enable + configure (homeserver, accessToken, DM policy)
+# via openclaw.json.
+COPY --from=builder /build/matrix-ext /app/lib/node_modules/openclaw/dist/extensions/matrix
 
 # Copy signal-cli native binary
 COPY --from=builder /build/signal-cli /app/signal-cli
