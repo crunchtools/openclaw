@@ -112,7 +112,7 @@ USER root
 RUN rm -rf /usr/lib/node_modules_22/npm \
            /usr/bin/npm /usr/bin/npx \
            /usr/sbin/npm /usr/sbin/npx && \
-    find /app -type f \( -name "tsgolint" -o -name "tsgo" \) -path "*/linux-x64/*" -delete
+    find /app -type f \( -name "tsgolint" -o -name "tsgo" \) -delete
 USER 65532
 
 ENV PATH="/app/bin:/app/mcporter/bin:/app/signal-cli/bin:${PATH}" \
