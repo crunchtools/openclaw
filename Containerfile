@@ -42,16 +42,10 @@ RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
 ARG MCPORTER_VERSION=0.7.3
 RUN npm install --global --prefix /build/mcporter mcporter@${MCPORTER_VERSION}
 
-# Install the Matrix channel plugin as a BUNDLED OpenClaw extension (pinned).
-# Same bundling rationale as clawphone: read-only + npm-stripped runtime image.
-# Matrix uses the official matrix-js-sdk for DMs, rooms, threads, media,
-# reactions, and E2EE. Ships DISABLED; enable + configure in openclaw.json.
-# Re-vet on every version bump.
-ARG MATRIX_VERSION=2026.6.8
-RUN npm install --prefix /build/matrix @openclaw/matrix@${MATRIX_VERSION} --legacy-peer-deps && \
-    mkdir -p /build/matrix-ext && \
-    cp -aL /build/matrix/node_modules/@openclaw/matrix/. /build/matrix-ext/ && \
-    cp -aL /build/matrix/node_modules /build/matrix-ext/node_modules
+# Matrix channel plugin is installed via `openclaw plugins install @openclaw/matrix`
+# into the bind-mounted ~/.openclaw volume, NOT bundled in the image. Bundling
+# caused "plugin module path escapes plugin root" errors from OpenClaw's plugin
+# sandbox. The user-installed plugin persists in the volume across image rebuilds.
 
 # Download signal-cli native binary (GraalVM, no JVM required)
 ARG SIGNAL_CLI_VERSION=0.14.0
@@ -81,11 +75,6 @@ WORKDIR /app
 
 # Copy installed OpenClaw from builder into /app
 COPY --from=builder /build/install /app
-
-# Bundle the Matrix channel plugin into the stock extensions directory.
-# Ships DISABLED — enable + configure (homeserver, accessToken, DM policy)
-# via openclaw.json.
-COPY --from=builder /build/matrix-ext /app/lib/node_modules/openclaw/dist/extensions/matrix
 
 # Copy signal-cli native binary
 COPY --from=builder /build/signal-cli /app/signal-cli
