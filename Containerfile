@@ -42,10 +42,11 @@ RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
 ARG MCPORTER_VERSION=0.7.3
 RUN npm install --global --prefix /build/mcporter mcporter@${MCPORTER_VERSION}
 
-# Matrix channel plugin is installed via `openclaw plugins install @openclaw/matrix`
-# into the bind-mounted ~/.openclaw volume, NOT bundled in the image. Bundling
-# caused "plugin module path escapes plugin root" errors from OpenClaw's plugin
-# sandbox. The user-installed plugin persists in the volume across image rebuilds.
+# Matrix channel plugin: installed at deploy time into the bind-mounted
+# ~/.openclaw volume via a helper container that mirrors the runtime layout.
+# See deploy instructions in README. Bundling in the image doesn't work because
+# the bind mount overlays ~/.openclaw, and manual bundling into dist/extensions
+# triggers OpenClaw's plugin sandbox path checks.
 
 # Download signal-cli native binary (GraalVM, no JVM required)
 ARG SIGNAL_CLI_VERSION=0.14.0
