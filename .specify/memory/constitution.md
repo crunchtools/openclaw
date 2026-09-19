@@ -219,7 +219,7 @@ Token budget circuit breaker ($2.00/conversation) prevents runaway costs.
 | Application | SIGTERM / health endpoint | `podman stop openclaw.crunchtools.com` |
 | Network | nftables | Drop outbound from OpenClaw container |
 
-### Monitoring (Zabbix)
+### Monitoring (Nagios)
 
 | Check | Type | Priority |
 |-------|------|----------|
@@ -246,7 +246,7 @@ Token budget circuit breaker ($2.00/conversation) prevents runaway costs.
 | 3 | MCP server allowlist: all servers scored >= B/15 via find-mcp-server | Done |
 | 4 | Circuit breakers configured and tested (trip each one intentionally) | Pending |
 | 5 | Credential audit: no hardcoded secrets in config or image | Done |
-| 6 | Monitoring: Zabbix items created, kill switches tested | Done |
+| 6 | Monitoring: Nagios checks created, kill switches tested | Done |
 | 7 | Per-repo constitution written and validated | Done |
 | 8 | Firewall: nftables updated only if public access is needed (default: no) | Done (no public access) |
 | 9 | Systemd unit: enabled, tested start/stop/restart | Done |
