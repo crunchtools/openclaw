@@ -14,10 +14,7 @@ name: Build and Push OpenClaw
 on:
   push:
     branches: [main]
-    paths:
-      - 'Containerfile'
-      - 'config/**'
-      - '.github/workflows/build.yml'
+    tags: ["v*"]
   workflow_call:
   workflow_dispatch:
 
