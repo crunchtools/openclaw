@@ -27,15 +27,27 @@ WORKDIR /build
 # Install OpenClaw at a pinned version — update this on upgrades
 # --legacy-peer-deps on the in-package overrides: re-resolving OpenClaw's dev
 # tree otherwise fails on an upstream peer conflict (oxlint vs oxlint-tsgolint).
+#
+# CVE overrides below are re-pinned periodically as Trivy flags new advisories
+# against whatever OpenClaw's own npm install resolved. tar/undici were
+# already being overridden here; fast-uri/ip-address/brace-expansion are new
+# as of this pass (RT: none, Scott approved directly) — verified clean by
+# comparing against mcporter's independently-resolved copies of the same
+# packages below, which Trivy already reports as 0 findings at these versions.
 RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
     cd /build/install/lib/node_modules/openclaw && \
     npm install @hono/node-server@1.19.10 --save --legacy-peer-deps && \
-    npm install tar@7.5.11 --legacy-peer-deps && \
+    npm install tar@7.5.22 --legacy-peer-deps && \
     npm install fast-xml-parser@5.5.6 --legacy-peer-deps && \
     npm install glob@10.5.0 --legacy-peer-deps && \
     npm install minimatch@9.0.7 --legacy-peer-deps && \
-    npm install undici@8.5.0 --legacy-peer-deps && \
-    find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} +
+    npm install undici@8.10.2 --legacy-peer-deps && \
+    npm install fast-uri@3.1.8 --legacy-peer-deps && \
+    npm install ip-address@10.7.2 --legacy-peer-deps && \
+    npm install brace-expansion@5.0.12 --legacy-peer-deps && \
+    find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} + && \
+    cd node_modules/@openclaw/fs-safe && \
+    npm install tar@7.5.22 --legacy-peer-deps --no-save
 
 # Install mcporter — MCP server client, required for OpenClaw's mcporter skill
 # NOT bundled as an OpenClaw dependency; must be installed separately
