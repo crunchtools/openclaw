@@ -3,7 +3,7 @@
 > **Version:** 1.1.0
 > **Ratified:** 2026-03-05
 > **Status:** Active
-> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.1.0
+> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.17.0
 > **Profile:** Autonomous Agent
 > **Deployment:** lotor.dc3.crunchtools.com
 > **Tracking:** RT #1406 (deployment), RT #1400 (research)

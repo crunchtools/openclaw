@@ -2,12 +2,14 @@
 # Setup script for OpenClaw on Lotor
 # Run once on lotor.dc3.crunchtools.com to create directory structure
 #
-# Usage: sudo bash setup-lotor.sh
+# Usage: sudo bash scripts/setup-lotor.sh
 
 set -euo pipefail
 
 SERVICE_DIR="/srv/openclaw.crunchtools.com"
 OPENCLAW_UID=65532
+# Resolve through symlinks so the config templates are found from any cwd
+CONFIG_SRC="$(cd "$(dirname "$(readlink -f "$0")")/../config" && pwd)"
 
 echo "Creating directory structure at ${SERVICE_DIR}..."
 
@@ -18,13 +20,13 @@ mkdir -p "${SERVICE_DIR}/signal/data"
 
 # Copy config template if env file doesn't exist
 if [ ! -f "${SERVICE_DIR}/config/env" ]; then
-    cp "$(dirname "$0")/env.example" "${SERVICE_DIR}/config/env"
+    cp "${CONFIG_SRC}/env.example" "${SERVICE_DIR}/config/env"
     chmod 600 "${SERVICE_DIR}/config/env"
     echo "Created ${SERVICE_DIR}/config/env — edit with real credentials"
 fi
 
 # Copy OpenClaw config
-cp "$(dirname "$0")/openclaw.json5" "${SERVICE_DIR}/config/openclaw.json5"
+cp "${CONFIG_SRC}/openclaw.json5" "${SERVICE_DIR}/config/openclaw.json5"
 
 # Set ownership for container user (UID 1001)
 chown -R ${OPENCLAW_UID}:${OPENCLAW_UID} "${SERVICE_DIR}/data"
