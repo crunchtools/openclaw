@@ -1,290 +1,145 @@
 # OpenClaw Constitution
 
-> **Version:** 1.1.0
+> **Version:** 1.2.0
 > **Ratified:** 2026-03-05
+> **Amended:** 2026-10-02
 > **Status:** Active
-> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.17.0
+> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.18.0
 > **Profile:** Autonomous Agent
-> **Deployment:** lotor.dc3.crunchtools.com
-> **Tracking:** RT #1406 (deployment), RT #1400 (research)
 
----
+OpenClaw, a general-purpose AI assistant, packaged as a container and run
+unattended with a human-in-the-loop gate on every write. Users reach it over
+Signal (outbound connection, no public web exposure). Tracking: RT #1400
+(research), RT #1406 (deployment).
 
-## Overview
+This file holds the values specific to this deployment. The fleet rules and
+the Autonomous Agent profile (the six layers' requirements, quality gates,
+naming) apply at the inherited version and are checked against this repo's
+files by `constitution.yml`. They are not restated here.
 
-OpenClaw general-purpose AI assistant deployed on lotor.dc3.crunchtools.com as a containerized service. Operates in unattended mode with human-in-the-loop gates for all write operations. Dead man's switch active with a 4-hour default window. User interaction via Signal bot (outbound connection, no public web exposure).
+## Trust Boundary
 
----
+Phase 1 is a single agent with deterministic input sanitization and output
+validation. There is no P-Agent/Q-Agent split yet: CaMeL-style tooling was
+not mature enough for production. Every tool call goes through structured
+schema validation, freeform strings are rejected in privileged parameters,
+Signal input is sanitized before the agent sees it, and output is validated
+before a tool runs.
+
+Phase 2 makes mcporter the boundary: web-fetching MCP tools are quarantined
+behind a sub-agent with no other tool access, its output is stripped by
+non-LLM validation, and extracted data is passed by symbolic reference, never
+as raw content.
 
 ## Layer 1 — Trust Boundary Architecture
 
-### Current (Phase 1)
-
-Single-agent deployment with deterministic input sanitization and output validation layers. No P-Agent/Q-Agent split — CaMeL-style tooling is not yet mature enough for production use.
-
-- All tool calls go through structured schema validation
-- Freeform strings rejected in privileged parameters
-- Input from Signal messages sanitized before agent processing
-- Output validated before tool execution
-
-### Future (Phase 2)
-
-mcporter as natural trust boundary point:
-
-- Quarantine web-fetching MCP tools behind a sub-agent with no other tool access
-- Strip sub-agent output through non-LLM validation
-- Use symbolic references for extracted data (no raw content passthrough)
-
----
+As above: Phase 1 single agent, Phase 2 quarantined sub-agent behind mcporter.
 
 ## Layer 2 — MCP Server Governance
 
-### Server Allowlist
+Allowlist, read-only to start (scored 2026-03-05 with `find-mcp-server`):
 
-Initial deployment: read-only, minimal starter set.
+| Server | Scorecard | Risk tier | Use |
+|--------|-----------|-----------|-----|
+| mcp-request-tracker-crunchtools | A (20/24) | Read-only | Ticket lookups |
+| mcp-mediawiki-crunchtools | A (24/24) | Read-only | Wiki lookups |
+| mcp-memory (crunchtools/memory) | B (16/24) | Read-only | Memory search, no store |
 
-| Server | Scorecard | Risk Tier | Rationale |
-|--------|-----------|-----------|-----------|
-| mcp-request-tracker-crunchtools | A (20/24) | Read-only | Ticket lookups, no writes initially |
-| mcp-mediawiki-crunchtools | A (24/24) | Read-only | Wiki page lookups |
-| mcp-memory (crunchtools/memory) | B (16/24) | Read-only | Memory search only, no store |
-
-Scorecard evaluations completed 2026-03-05 via `find-mcp-server`. All servers exceed B/15 minimum.
-
-### mcporter Configuration
-
-- Hot-reload: **disabled**
-- Version pinning: all servers pinned to specific releases (no `latest` tags)
-- Invocation logging: **enabled** (structured JSON, credentials redacted)
-- Runtime discovery: **prohibited**
-- Ad-hoc server installation: **prohibited**
-
-### Expanding the Allowlist
-
-Adding a server requires:
-
-1. Score the server via `find-mcp-server` (minimum B/15 for production)
-2. Update the mcporter config with pinned version
-3. Classify all tools by risk tier (read-only, write, system, network)
-4. Re-run quality gates
-5. Update this constitution with the new server entry
-
----
+mcporter (pinned by `MCPORTER_VERSION` in the Containerfile): hot-reload
+disabled, every server pinned to a release, invocation logging on (JSON,
+credentials redacted), runtime discovery and ad-hoc installation prohibited.
+Adding a server means scoring it, pinning it in the mcporter config,
+classifying its tools by risk tier, re-running the gates, and adding it to
+the table above.
 
 ## Layer 3 — Container & Supply Chain Security
 
-### Container Image
-
-| Attribute | Value |
-|-----------|-------|
-| Base image | `quay.io/hummingbird/nodejs:22` (Node.js 22 LTS) |
-| Fallback | UBI 10 Minimal + Node.js from AppStream |
-| Build file | `Containerfile` (multi-stage: builder + runtime) |
-| Registry (primary) | `quay.io/crunchtools/openclaw` |
-| Registry (secondary) | `ghcr.io/crunchtools/openclaw` |
-| OpenClaw version | Pinned in Containerfile (currently `2026.3.2`) |
-
-### CI Pipeline
-
-- **Build trigger:** Push to main, Containerfile changes
-- **Dual-push:** Quay.io + GHCR on every main branch build
-- **Weekly rebuild:** Monday 6am UTC (scheduled CI)
-- **Trivy scan:** Every build, fail on CRITICAL/HIGH
-- **Security scan:** Weekly Trivy container scan (Monday 9am UTC)
-
-### OCI Labels
-
-- `org.opencontainers.image.source` — GitHub repo URL
-- `org.opencontainers.image.description` — Service description
-- `org.opencontainers.image.licenses` — MIT
-
-### Runtime Constraints
-
-| Constraint | Setting |
-|------------|---------|
-| Rootless (non-root) | Yes (UID 65532, Hummingbird default) |
-| Read-only root filesystem | `--read-only` |
-| SELinux | Enforcing (`:Z` volume mounts) |
-| Host network | No (bridge, port mapped to 127.0.0.1) |
-| Gateway bind | `lan` inside container (host restricts via `-p 127.0.0.1:18789:18789`) |
-| Tmpfs | `/tmp:rw,nosuid` (no noexec — signal-cli extracts native libs to /tmp) |
-| Capabilities | Default (no `--privileged`, no `SYS_ADMIN`) |
-
-### Signal Integration
-
-signal-cli (GraalVM native binary, v0.14.0) is bundled directly in the container image. OpenClaw auto-spawns it as a JSON-RPC + SSE daemon on container start. No sidecar container needed.
-
-| Attribute | Value |
-|-----------|-------|
-| Binary | `signal-cli` (GraalVM native, no JVM) |
-| Version | 0.14.0 (pinned in Containerfile `ARG`) |
-| Transport | JSON-RPC + SSE (OpenClaw-managed, internal port 8080) |
-| Data volume | `/srv/openclaw.crunchtools.com/signal/data` → `/app/.local/share/signal-cli:Z` |
-| Account | Registered via `signal-cli` inside container |
-
----
+- **Image:** `quay.io/crunchtools/openclaw` and `ghcr.io/crunchtools/openclaw`.
+- **Build:** multi-stage. The builder is UBI 10 Minimal because Hummingbird
+  lacks the `git` that OpenClaw's npm install needs; the runtime is
+  `quay.io/hummingbird/nodejs:22`. OpenClaw is pinned by version in the
+  Containerfile, with CVE overrides for transitive npm packages. npm and npx
+  are stripped from the runtime: OpenClaw needs only `node`, and npm ships
+  inside every Hummingbird Node.js variant.
+- **Trivy:** blocking on CRITICAL/HIGH. The weekly rebuild is a
+  `workflow_dispatch` pulsed by Hermes, not a `schedule:`.
+- **Runtime:** rootless (UID 65532), `--read-only` root filesystem, SELinux
+  enforcing with `:Z` mounts, bridge network with `-p 127.0.0.1:18789:18789`
+  (the gateway binds `lan` inside the container because loopback is
+  unreachable through the bridge DNAT), default capabilities only.
+- **Tmpfs:** `/tmp:rw,nosuid`, deliberately without `noexec`: signal-cli
+  extracts native libraries to `/tmp`.
+- **signal-cli:** the GraalVM native binary (no JVM), pinned by
+  `SIGNAL_CLI_VERSION`, bundled in the image and spawned by OpenClaw; no
+  sidecar.
+- **License:** upstream OpenClaw is MIT; the image's
+  `org.opencontainers.image.licenses` label says MIT for that reason.
 
 ## Layer 4 — Runtime Security & Behavioral Controls
 
-### Circuit Breakers
-
-Conservative values for unattended mode (half the profile defaults):
+Circuit breakers, half the profile defaults for unattended mode (set in
+`config/openclaw.json5`):
 
 | Breaker | Value |
 |---------|-------|
-| Max tool calls per conversation | 25 |
+| Tool calls per conversation | 25 |
 | Token budget per conversation | $2.00 |
 | Repeated same-tool invocations | 3 consecutive |
-| Max conversation depth | 50 turns |
+| Conversation depth | 50 turns |
 
-When tripped: agent halts, logs the event, notifies operator via Signal.
+Rate limits: 10 calls/hr per tool, 50 calls/min per MCP server, 200 tool
+calls/hr globally; repeated failures cool down 1 min, 5 min, 15 min, then
+halt.
 
-### Rate Limiting
+Audit log: JSON at `/app/logs/audit/` (host `logs/audit/`), 90-day retention,
+credentials redacted, daily files, compressed after 7 days.
 
-| Scope | Limit |
-|-------|-------|
-| Per-tool | 10/hr (all tools, read-only) |
-| Per-server | 50 calls/min to any single MCP server |
-| Global | 200 total tool calls/hr |
-
-Repeated failures trigger escalating cooldowns: 1min → 5min → 15min → halt.
-
-### Audit Logging
-
-| Setting | Value |
-|---------|-------|
-| Format | Structured JSON |
-| Path | `/srv/openclaw.crunchtools.com/logs/audit/` |
-| Retention | 90 days |
-| Credential redaction | Yes |
-| Rotation | Daily files |
-| Compression | After 7 days |
-
-### Human-in-the-Loop
-
-- ALL write operations require explicit human approval
-- No write tools in initial allowlist (gate pre-configured for future expansion)
-- Mode: `unattended-gated`
-
-### Dead Man's Switch
-
-- Window: 4 hours
-- Notification channel: Signal
-- Behavior: If no human input received within window, agent pauses and sends notification
-
----
+Human in the loop: mode `unattended-gated`; every write needs explicit
+approval, and the initial allowlist has no write tools. Dead man's switch:
+4-hour window, notification over Signal, the agent pauses when it expires.
 
 ## Layer 5 — Credential & Identity Management
 
-### LLM Provider
-
-**Google Gemini** (all tiers, single provider, existing account).
-
-| Tier | Model | Input/1M | Output/1M | Use Case |
-|------|-------|----------|-----------|----------|
-| cheap | Gemini 2.5 Flash-Lite | $0.10 | $0.40 | Heartbeats, simple lookups |
-| fast | Gemini 2.5 Flash | $0.30 | $2.50 | Routine tasks |
-| smart | Gemini 3 Pro Preview | TBD | TBD | Complex reasoning (current primary) |
-
-### Estimated Monthly Cost
-
-| Usage Level | Requests/month | Cost |
-|-------------|----------------|------|
-| Light | 500 | $2–8 |
-| Medium | 2,000 | $8–30 |
-| Heavy | 5,000+ | $30–100 |
-
-Token budget circuit breaker ($2.00/conversation) prevents runaway costs.
-
-### Credential Handling
-
-| Credential | Source | Scope |
-|------------|--------|-------|
-| `GOOGLE_AI_API_KEY` | systemd EnvironmentFile | LLM provider |
-| MCP server credentials | Per-server env vars | One per server |
-
-- No persistent API keys in config files
-- Config at `/srv/openclaw.crunchtools.com/config/` — secrets-free
-- Env file at `/srv/openclaw.crunchtools.com/config/env` — chmod 600
-
----
+- **LLM provider:** Google Gemini only. Tiers in `config/openclaw.json5`:
+  cheap `gemini-2.5-flash-lite` (heartbeats, simple lookups), fast
+  `gemini-2.5-flash` (routine work), smart `gemini-2.5-pro` (complex
+  reasoning).
+- `GOOGLE_AI_API_KEY` and each MCP server's credentials are env vars from a
+  systemd `EnvironmentFile` (`config/env`, mode 600; shape in
+  `config/env.example`). The rest of `config/` holds no secrets.
 
 ## Layer 6 — Monitoring, Detection & Response
 
-### Kill Switches
+Kill switches:
 
-| Level | Mechanism | Command |
-|-------|-----------|---------|
-| Container | systemd | `systemctl stop openclaw.crunchtools.com.service` |
-| Application | SIGTERM / health endpoint | `podman stop openclaw.crunchtools.com` |
-| Network | nftables | Drop outbound from OpenClaw container |
+| Level | Mechanism |
+|-------|-----------|
+| Container | `systemctl stop openclaw.crunchtools.com.service` |
+| Application | `podman stop openclaw.crunchtools.com` (SIGTERM) |
+| Network | nftables rule dropping the container's outbound traffic |
 
-### Monitoring (Nagios)
+Nagios: TCP check on 18789 (high), container state and health (high), and
+container exit code. The image's `HEALTHCHECK` runs `openclaw health --json`.
 
-| Check | Type | Priority |
-|-------|------|----------|
-| TCP port 18789 | `net.tcp.service[tcp,127.0.0.1,18789]` | HIGH |
-| Container status | Docker discovery (40 items: CPU, memory, network, state, health) | varies |
-| Container health | `docker.container_info.state.health` | HIGH |
-| Container exit code | `docker.container_info.state.exitcode` trigger | AVERAGE |
+Incident response: trip a kill switch, preserve the audit logs, open an RT
+ticket, and hold a post-incident review before restart.
 
-### Incident Response
+**Open gate:** the circuit breakers are configured but have not yet been
+tripped on purpose to prove them.
 
-1. Trigger kill switch (any level)
-2. Preserve audit logs (no cleanup on kill)
-3. Create RT ticket documenting the incident
-4. Post-incident review required before restart
-
----
-
-## Quality Gates
-
-| # | Gate | Status |
-|---|------|--------|
-| 1 | Container builds from Containerfile without errors | Done |
-| 2 | Trivy scan passes (no critical/high CVEs) | Done |
-| 3 | MCP server allowlist: all servers scored >= B/15 via find-mcp-server | Done |
-| 4 | Circuit breakers configured and tested (trip each one intentionally) | Pending |
-| 5 | Credential audit: no hardcoded secrets in config or image | Done |
-| 6 | Monitoring: Nagios checks created, kill switches tested | Done |
-| 7 | Per-repo constitution written and validated | Done |
-| 8 | Firewall: nftables updated only if public access is needed (default: no) | Done (no public access) |
-| 9 | Systemd unit: enabled, tested start/stop/restart | Done |
-
----
-
-## Infrastructure
+## Service
 
 | Attribute | Value |
 |-----------|-------|
-| Host | lotor.dc3.crunchtools.com |
-| OS | RHEL 10.1 Image Mode (bootc) |
-| Resources | 6 vCPU, 16GB RAM |
-| Service name | openclaw.crunchtools.com |
-| Systemd unit | openclaw.crunchtools.com.service |
-| Port | 18789 (127.0.0.1 only) |
-| Data volume | `/srv/openclaw.crunchtools.com/` |
-| Public access | No (outbound to Signal only) |
-| Container count | 1 (OpenClaw with bundled signal-cli) |
+| Service / unit | `openclaw.crunchtools.com` / `openclaw.crunchtools.com.service` |
+| Port | 18789, `127.0.0.1` only |
+| Host directory | `/srv/<service>/` (`data/openclaw`, `signal/data`, `logs`, `config`) |
+| Public access | None; outbound to Signal only |
 
----
+## History
 
-## Versioning
-
-This constitution follows [Semantic Versioning 2.0.0](https://semver.org/). Changes to security layers or quality gates require a MINOR version bump. Corrections and clarifications are PATCH versions.
-
----
-
-## License
-
-OpenClaw is licensed under MIT. The crunchtools constitution and autonomous agent profile are licensed under AGPL-3.0-or-later.
-
----
-
-## References
-
-- [Constitution](https://github.com/crunchtools/constitution) v1.1.0
-- [Autonomous Agent Profile](https://github.com/crunchtools/constitution/blob/main/profiles/autonomous-agent.md)
-- Research: RT #1400
-- Deployment: RT #1406
-- Lotor infrastructure: RT #1404
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-03-05 | Initial constitution |
+| 1.1.0 | 2026-03-05 | Updated to match the deployed state |
+| 1.2.0 | 2026-10-02 | Manifest under constitution v1.18.0: profile restatement removed; host details dropped (XVII); smart tier and OpenClaw pin taken from the config and Containerfile |
