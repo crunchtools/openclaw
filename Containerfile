@@ -58,7 +58,7 @@ RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
 # build if an upgrade moves it or bundles another module into the same chunk.
 RUN F=$(grep -l "region extensions/openrouter/image-generation-provider.ts" \
         /build/install/lib/node_modules/openclaw/dist/*.js) && \
-    [ "$(grep -c 'allowPrivateNetwork: false,' "$F")" = 1 ] && \
+    [ "$(grep -o 'allowPrivateNetwork: false,' "$F" | wc -l)" -eq 1 ] && \
     sed -i 's|allowPrivateNetwork: false,|allowPrivateNetwork: req.cfg?.models?.providers?.openrouter?.request?.allowPrivateNetwork === true ? true : void 0,|' "$F" && \
     grep -q "openrouter?.request?.allowPrivateNetwork" "$F"
 
