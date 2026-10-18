@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-18
+
+### Security
+
+- Bumped `@modelcontextprotocol/sdk` 1.29.0 -> 1.31.0 (CVE-2026-104850) and
+  `proxy-addr` 2.0.7 -> 2.0.8 (CVE-2026-90711 CRITICAL). Dropped the unused
+  devDependency `oxfmt` and its exact-pinned `tinypool` 2.1.0
+  (CVE-2026-104848, CVE-2026-104849). `braces` 3.0.3 (CVE-2026-93687) has no
+  fix yet and is in `.trivyignore`. Trivy blocked the v1.1.1 build on these,
+  so v1.1.1 never published.
+
 ## [1.1.1] - 2026-10-18
 
 ### Fixed

@@ -34,6 +34,10 @@ WORKDIR /build
 # as of this pass (RT: none, Scott approved directly) — verified clean by
 # comparing against mcporter's independently-resolved copies of the same
 # packages below, which Trivy already reports as 0 findings at these versions.
+# 2026-10-18: @modelcontextprotocol/sdk (CVE-2026-104850) and proxy-addr
+# (CVE-2026-90711) bumped. oxfmt is an upstream devDependency that the
+# in-package installs drag in, and dist never imports it, so it is deleted
+# along with its exact-pinned tinypool (CVE-2026-104848, CVE-2026-104849).
 RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
     cd /build/install/lib/node_modules/openclaw && \
     npm install @hono/node-server@1.19.10 --save --legacy-peer-deps && \
@@ -45,6 +49,9 @@ RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
     npm install fast-uri@3.1.8 --legacy-peer-deps && \
     npm install ip-address@10.7.2 --legacy-peer-deps && \
     npm install brace-expansion@5.0.12 --legacy-peer-deps && \
+    npm install @modelcontextprotocol/sdk@1.31.0 --legacy-peer-deps && \
+    npm install proxy-addr@2.0.8 --legacy-peer-deps && \
+    rm -rf node_modules/oxfmt node_modules/tinypool && \
     find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} + && \
     cd node_modules/@openclaw/fs-safe && \
     npm install tar@7.5.22 --legacy-peer-deps --no-save
