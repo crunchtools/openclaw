@@ -58,6 +58,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # RT #1534 build patch: OpenRouter image provider honors
+      # request.allowPrivateNetwork and stays blocked without it.
+      - name: Smoke test OpenRouter private-network patch
+        run: |
+          docker run --rm --network none -v "$PWD/scripts:/t:ro" \
+            openclaw:scan node /t/test-openrouter-private-network.mjs
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
         with:

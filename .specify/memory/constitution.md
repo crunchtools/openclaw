@@ -1,8 +1,8 @@
 # OpenClaw Constitution
 
-> **Version:** 1.2.0
+> **Version:** 1.3.0
 > **Ratified:** 2026-03-05
-> **Amended:** 2026-10-02
+> **Amended:** 2026-10-18
 > **Status:** Active
 > **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.24.0
 > **Profile:** Autonomous Agent
@@ -100,11 +100,16 @@ approval, and the initial allowlist has no write tools. Dead man's switch:
 
 ## Layer 5 — Credential & Identity Management
 
-- **LLM provider:** Google Gemini only. Tiers in `config/openclaw.json5`:
-  cheap `gemini-2.5-flash-lite` (heartbeats, simple lookups), fast
-  `gemini-2.5-flash` (routine work), smart `gemini-2.5-pro` (complex
-  reasoning).
-- `GOOGLE_AI_API_KEY` and each MCP server's credentials are env vars from a
+- **LLM provider:** OpenRouter, reached only through Trentina's
+  `/llm/openrouter` proxy (10.89.11.2 on `crunchtools-takeda`). It carries
+  chat models and image generation, ZDR-compliant models only (RT #1505,
+  RT #1534). The bearer is Takeda's Trentina profile token, never an
+  OpenRouter key. The image build patches the OpenRouter image provider to
+  honor `models.providers.openrouter.request.allowPrivateNetwork`, which is
+  needed because Trentina sits on a private IP.
+- `GEMINI_API_KEY` (a legacy name; it holds Takeda's Trentina profile
+  token, resolved by the `openrouter` and `trentina-or` providers through an
+  env SecretRef) and each MCP server's credentials are env vars from a
   systemd `EnvironmentFile` (`config/env`, mode 600; shape in
   `config/env.example`). The rest of `config/` holds no secrets.
 
@@ -134,7 +139,8 @@ tripped on purpose to prove them.
 | Service / unit | `openclaw.crunchtools.com` / `openclaw.crunchtools.com.service` |
 | Port | 18789, `127.0.0.1` only |
 | Host directory | `/srv/<service>/` (`data/openclaw`, `signal/data`, `logs`, `config`) |
-| Public access | None; outbound to Signal only |
+| Public access | None |
+| Egress | `crunchtools-takeda` peers only: Trentina (LLM proxy) and the Takeda homeserver; container runs `--dns=none` |
 
 ## History
 
@@ -143,3 +149,4 @@ tripped on purpose to prove them.
 | 1.0.0 | 2026-03-05 | Initial constitution |
 | 1.1.0 | 2026-03-05 | Updated to match the deployed state |
 | 1.2.0 | 2026-10-02 | Manifest under constitution v1.18.0: profile restatement removed; host details dropped (XVII); smart tier and OpenClaw pin taken from the config and Containerfile |
+| 1.3.0 | 2026-10-18 | LLM and image generation via Trentina's OpenRouter proxy; egress is Trentina only (RT #1534) |
