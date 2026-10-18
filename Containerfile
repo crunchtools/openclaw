@@ -49,6 +49,17 @@ RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
     cd node_modules/@openclaw/fs-safe && \
     npm install tar@7.5.22 --legacy-peer-deps --no-save
 
+# Let the OpenRouter image provider reach a private-network baseUrl (RT #1534).
+# Upstream hardcodes allowPrivateNetwork: false, which the request resolver
+# treats as an explicit deny, so models.providers.openrouter.request.
+# allowPrivateNetwork is ignored and Trentina's /llm/openrouter route on
+# 10.89.11.2 is SSRF-blocked. Still hardcoded on upstream main as of 2026-10-18.
+# Fails the build if the dist file or the line moves on an OpenClaw upgrade.
+RUN F=$(grep -l "region extensions/openrouter/image-generation-provider.ts" \
+        /build/install/lib/node_modules/openclaw/dist/*.js) && \
+    sed -i 's|allowPrivateNetwork: false,|allowPrivateNetwork: req.cfg?.models?.providers?.openrouter?.request?.allowPrivateNetwork === true ? true : void 0,|' "$F" && \
+    grep -q "openrouter?.request?.allowPrivateNetwork" "$F"
+
 # Install mcporter — MCP server client, required for OpenClaw's mcporter skill
 # NOT bundled as an OpenClaw dependency; must be installed separately
 ARG MCPORTER_VERSION=0.7.3

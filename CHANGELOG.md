@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-18
+
+### Added
+
+- The OpenRouter image generation provider honors
+  `models.providers.openrouter.request.allowPrivateNetwork`, so image
+  generation can route through Trentina's private `/llm/openrouter` proxy
+  (RT #1534). This is a build-time patch, because upstream hardcodes a
+  private-network deny.
+
 ### Changed
 
 - Constitution is now a v1.18.0 manifest: fleet and profile rules apply by
