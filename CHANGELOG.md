@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-18
+
+### Fixed
+
+- The build's OpenRouter smoke test now overrides the image's `openclaw`
+  entrypoint with `node`. Before this, the v1.1.0 build failed at that step
+  and published nothing.
+
 ## [1.1.0] - 2026-10-18
 
 ### Added
