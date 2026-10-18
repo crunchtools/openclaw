@@ -63,7 +63,7 @@ jobs:
       - name: Smoke test OpenRouter private-network patch
         run: |
           docker run --rm --network none -v "$PWD/scripts:/t:ro" \
-            openclaw:scan node /t/test-openrouter-private-network.mjs
+            --entrypoint node openclaw:scan /t/test-openrouter-private-network.mjs
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
