@@ -4,7 +4,7 @@
 > **Ratified:** 2026-03-05
 > **Amended:** 2026-10-18
 > **Status:** Active
-> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.26.0
+> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.27.0
 > **Profile:** Autonomous Agent
 
 OpenClaw, a general-purpose AI assistant, packaged as a container and run
