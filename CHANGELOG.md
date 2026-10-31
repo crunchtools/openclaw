@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Security
+
+- Bumped `@modelcontextprotocol/sdk` 1.31.0 -> 1.32.0 (CVE-2026-111767,
+  CVE-2026-111768), `undici` 8.10.2 -> 8.12.2 (CVE-2026-109869), `body-parser`
+  2.2.2 -> 2.4.0 (CVE-2026-111181) and the stray hoisted `zod` 3.25.76 -> 4.6.6
+  (CVE-2023-54404; OpenClaw declares zod 4.x). Trivy had main red since
+  2026-10-27.
+
 ## [1.1.2] - 2026-10-18
 
 ### Security
