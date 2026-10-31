@@ -38,6 +38,9 @@ WORKDIR /build
 # (CVE-2026-90711) bumped. oxfmt is an upstream devDependency that the
 # in-package installs drag in, and dist never imports it, so it is deleted
 # along with its exact-pinned tinypool (CVE-2026-104848, CVE-2026-104849).
+# 2026-10-31: @modelcontextprotocol/sdk 1.32.0 (CVE-2026-111767/111768), undici
+# 8.12.2 (CVE-2026-109869), body-parser 2.4.0 (CVE-2026-111181), zod 4.6.6
+# (CVE-2023-54404; OpenClaw itself depends on zod 4.x, the hoisted 3.25 was stray).
 RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
     cd /build/install/lib/node_modules/openclaw && \
     npm install @hono/node-server@1.19.10 --save --legacy-peer-deps && \
@@ -45,11 +48,13 @@ RUN npm install --global --prefix /build/install openclaw@2026.6.8 && \
     npm install fast-xml-parser@5.5.6 --legacy-peer-deps && \
     npm install glob@10.5.0 --legacy-peer-deps && \
     npm install minimatch@9.0.7 --legacy-peer-deps && \
-    npm install undici@8.10.2 --legacy-peer-deps && \
+    npm install undici@8.12.2 --legacy-peer-deps && \
     npm install fast-uri@3.1.8 --legacy-peer-deps && \
     npm install ip-address@10.7.2 --legacy-peer-deps && \
     npm install brace-expansion@5.0.12 --legacy-peer-deps && \
-    npm install @modelcontextprotocol/sdk@1.31.0 --legacy-peer-deps && \
+    npm install @modelcontextprotocol/sdk@1.32.0 --legacy-peer-deps && \
+    npm install body-parser@2.4.0 --legacy-peer-deps && \
+    npm install zod@4.6.6 --legacy-peer-deps && \
     npm install proxy-addr@2.0.8 --legacy-peer-deps && \
     rm -rf node_modules/oxfmt node_modules/tinypool && \
     find node_modules -mindepth 3 -path "*/@hono/node-server" -type d -exec rm -rf {} + && \
