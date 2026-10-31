@@ -100,7 +100,7 @@ RUN curl -sL "https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CL
 FROM quay.io/hummingbird/nodejs:22
 
 LABEL name="openclaw-crunchtools" \
-      version="1.0.0" \
+      version="1.1.2" \
       summary="OpenClaw autonomous agent under crunchtools constitution" \
       description="General-purpose AI assistant with Signal channel, MCP server governance, and behavioral circuit breakers" \
       maintainer="crunchtools.com" \
