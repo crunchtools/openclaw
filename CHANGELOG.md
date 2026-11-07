@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-11-07
+
 ### Security
 
 - Bumped `@modelcontextprotocol/sdk` 1.31.0 -> 1.32.0 (CVE-2026-111767,
