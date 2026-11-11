@@ -1,0 +1,33 @@
+name: Container
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+permissions: {}
+jobs:
+  container:
+    uses: crunchtools/constitution/.github/workflows/container-release.yml@v1.39.1
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      image: quay.io/crunchtools/openclaw
+      # The gateway must come up and report healthy (the Containerfile
+      # HEALTHCHECK, `openclaw health`) with the minimal config in
+      # tests/image/home mounted where production mounts ~/.openclaw. An
+      # overlay mount (:O) keeps the checkout untouched while the gateway writes.
+      boot: healthcheck
+      boot-run-args: -v ./tests/image/home:/app/.openclaw:O
+      boot-timeout: 180
+      # RT #1534 build patch: the OpenRouter image provider must honor
+      # request.allowPrivateNetwork and stay blocked without it.
+      contract-test: |
+        podman run --rm --network none --entrypoint node \
+          -v "$PWD/scripts:/t:ro,Z" "$IMAGE" /t/test-openrouter-private-network.mjs
+    secrets:
+      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}

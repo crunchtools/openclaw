@@ -1,9 +1,0 @@
-name: Weekly Rebuild
-
-on:
-  workflow_dispatch:
-
-jobs:
-  rebuild:
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
