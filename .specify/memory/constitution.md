@@ -4,7 +4,7 @@
 > **Ratified:** 2026-03-05
 > **Amended:** 2026-10-18
 > **Status:** Active
-> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.31.0
+> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.39.1
 > **Profile:** Autonomous Agent
 
 OpenClaw, a general-purpose AI assistant, packaged as a container and run
@@ -54,7 +54,7 @@ the table above.
 
 ## Layer 3 — Container & Supply Chain Security
 
-- **Image:** `quay.io/crunchtools/openclaw` and `ghcr.io/crunchtools/openclaw`.
+- **Image:** `quay.io/crunchtools/openclaw`.
 - **Build:** multi-stage. The builder is UBI 10 Minimal because Hummingbird
   lacks the `git` that OpenClaw's npm install needs; the runtime is
   `quay.io/hummingbird/nodejs:22`. OpenClaw is pinned by version in the
