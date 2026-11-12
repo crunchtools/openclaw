@@ -28,12 +28,12 @@ WORKDIR /build
 # --legacy-peer-deps on the in-package overrides: re-resolving OpenClaw's dev
 # tree otherwise fails on an upstream peer conflict (oxlint vs oxlint-tsgolint).
 #
-# CVE overrides below are re-pinned periodically as Trivy flags new advisories
+# CVE overrides below are re-pinned periodically as the fleet CVE scan flags new advisories
 # against whatever OpenClaw's own npm install resolved. tar/undici were
 # already being overridden here; fast-uri/ip-address/brace-expansion are new
 # as of this pass (RT: none, Scott approved directly) — verified clean by
 # comparing against mcporter's independently-resolved copies of the same
-# packages below, which Trivy already reports as 0 findings at these versions.
+# packages below, which the scanner reported as 0 findings at these versions.
 # 2026-10-18: @modelcontextprotocol/sdk (CVE-2026-104850) and proxy-addr
 # (CVE-2026-90711) bumped. oxfmt is an upstream devDependency that the
 # in-package installs drag in, and dist never imports it, so it is deleted

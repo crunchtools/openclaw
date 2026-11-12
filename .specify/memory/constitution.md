@@ -1,8 +1,8 @@
 # OpenClaw Constitution
 
-> **Version:** 1.3.0
+> **Version:** 1.4.0
 > **Ratified:** 2026-03-05
-> **Amended:** 2026-10-18
+> **Amended:** 2026-11-11
 > **Status:** Active
 > **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.39.1
 > **Profile:** Autonomous Agent
@@ -61,7 +61,7 @@ the table above.
   Containerfile, with CVE overrides for transitive npm packages. npm and npx
   are stripped from the runtime: OpenClaw needs only `node`, and npm ships
   inside every Hummingbird Node.js variant.
-- **Trivy:** blocking on CRITICAL/HIGH. The weekly rebuild is a
+- **Vulnerability scanning:** none at build time; published images are scanned on a schedule by the fleet CVE check (grype + Nagios), which pages on a new fixable Critical (constitution 1.40.0, RT #1551). The weekly rebuild is a
   `workflow_dispatch` pulsed by Hermes, not a `schedule:`.
 - **Runtime:** rootless (UID 65532), `--read-only` root filesystem, SELinux
   enforcing with `:Z` mounts, bridge network with `-p 127.0.0.1:18789:18789`
@@ -150,3 +150,4 @@ tripped on purpose to prove them.
 | 1.1.0 | 2026-03-05 | Updated to match the deployed state |
 | 1.2.0 | 2026-10-02 | Manifest under constitution v1.18.0: profile restatement removed; host details dropped (XVII); smart tier and OpenClaw pin taken from the config and Containerfile |
 | 1.3.0 | 2026-10-18 | LLM and image generation via Trentina's OpenRouter proxy; egress is Trentina only (RT #1534) |
+| 1.4.0 | 2026-11-11 | The per-build Trivy gate is retired with the fleet's (constitution 1.40.0): published images are scanned on a schedule by the fleet CVE check (RT #1551) |
