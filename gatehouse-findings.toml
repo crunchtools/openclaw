@@ -1,0 +1,7 @@
+[[findings]]
+agent = "bugs"
+category = "bug"
+file = ".github/workflows/container.yml"
+evidence = "COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}\nCOSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}"
+status = "not-a-bug"
+reason = "container-release.yml's promote job declares environment: cosign-signing when sign is true, so secrets passed by name resolve from that environment; mcp-nagios#101 signs and verifies with this exact wiring."
