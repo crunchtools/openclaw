@@ -8,9 +8,10 @@ on:
 permissions: {}
 jobs:
   container:
-    uses: crunchtools/constitution/.github/workflows/container-release.yml@v1.46.0
+    uses: crunchtools/constitution/.github/workflows/container-release.yml@v1.51.0
     permissions:
       contents: read
+      issues: write
       pull-requests: read
     with:
       image: quay.io/crunchtools/openclaw
