@@ -1,2 +1,10 @@
 [tool.sdlc]
 repo-kinds = ["autonomous-agent"]
+
+[tool.sdlc.image]
+# Written by crunchtools/sdlc's scripts/convert_repo.py: moved from the workflows.
+image = "quay.io/crunchtools/openclaw"
+boot = "healthcheck"
+boot-run-args = "-v ./tests/image/home:/app/.openclaw:O"
+boot-timeout = 180
+contract-test = "podman run --rm --network none --entrypoint node \\\n  -v \"$PWD/scripts:/t:ro,Z\" \"$IMAGE\" /t/test-openrouter-private-network.mjs\n"
