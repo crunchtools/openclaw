@@ -1,2 +1,32 @@
 [tool.sdlc]
 repo-kinds = ["autonomous-agent"]
+
+# What sdlc's image job builds, pushes and boot-gates. The keys are sdlc's
+# (crunchtools/sdlc sdlc_jobs/_boot.py), as constitution's container-release did:
+#   boot = "healthcheck"  start the built image detached (podman run -d) and pass
+#                         only when the image's own HEALTHCHECK reports healthy
+#   boot-run-args         extra `podman run` options for that boot, limited to
+#                         sdlc's allow-list; here an overlay (:O) of
+#                         tests/image/home as the agent's state dir, so the boot
+#                         has a config and writes never touch the checkout
+#   boot-timeout          seconds the healthcheck has to pass (default 180)
+[tool.sdlc.image]
+# Written by crunchtools/sdlc's scripts/convert_repo.py: moved from the workflows.
+image = "quay.io/crunchtools/openclaw"
+boot = "healthcheck"
+boot-run-args = "-v ./tests/image/home:/app/.openclaw:O"
+boot-timeout = 180
+
+[tool.sdlc.ci]
+checks = ["contract"]
+
+# The contract test, run inside the image this run built with no network: the
+# RT #1534 patch lets the OpenRouter provider reach a private baseUrl only when
+# allowPrivateNetwork is set. sdlc's image job does not run contract-test
+# (crunchtools/sdlc#118), so it is a check that does. A `command` check runs
+# argv in one container of `image` with the repo mounted read-only as the
+# working directory; its exit status is the check's verdict.
+[tool.sdlc.ci.contract]
+kind = "command"
+image = "localhost/openclaw:sdlc"
+argv = ["node", "scripts/test-openrouter-private-network.mjs"]

@@ -1,7 +1,7 @@
 // Smoke test for the RT #1534 build patch: the OpenRouter image provider must
 // reach a private baseUrl only when models.providers.openrouter.request.
-// allowPrivateNetwork is true. Runs inside the built image:
-//   podman run --rm -v ./scripts:/t:ro,Z <image> node /t/test-openrouter-private-network.mjs
+// allowPrivateNetwork is true. Runs inside the built image, as sdlc's
+// `contract` check in sdlc.toml.
 import { createServer } from "node:http";
 import { readdirSync, readFileSync } from "node:fs";
 
